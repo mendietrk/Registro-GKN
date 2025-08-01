@@ -2,6 +2,101 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Ubicacion = require("../models/ubicacionGKN.js");
+const Gasto = require("../models/gastos.js"); // corregido
+
+router.get("/gt", async (req, res) => {
+  try {
+    const gastos = await Gasto.find();
+    console.log(gastos);
+    res.render("igastos", { gastos });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al obtener gastos");
+  }
+});
+
+router.post("/add", async (req, res) => {
+  try {
+    const gasto = new Gasto(req.body);
+    await gasto.save();
+    res.redirect("/gt");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al agregar gasto");
+  }
+});
+
+router.post("/edit/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Gasto.updateOne({ _id: id }, req.body);
+    res.redirect("/gt");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al editar gasto");
+  }
+});
+
+router.get("/done/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const gasto = await Gasto.findById(id);
+    gasto.status = !gasto.status;
+    await gasto.save();
+    res.redirect("/gt");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al cambiar estado");
+  }
+});
+
+router.get("/edit/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const gasto = await Gasto.findById(id);
+    res.render("gedit", { gasto });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al cargar edición");
+  }
+});
+
+router.post("/db/update", async (req, res) => {
+  try {
+    const gasto = new Gasto(req.body); // corregido
+    await gasto.save();
+    res.redirect("/gt");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al actualizar base de datos");
+  }
+});
+
+router.get("/db/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Gasto.deleteOne({ _id: id });
+    res.redirect("/gt"); // corregido
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al eliminar gasto");
+  }
+});
+
+router.post('/subgrupos/eliminar-multiples', async (req, res) => {
+  const ids = req.body.subgruposSeleccionados;
+  if (!ids || ids.length === 0) {
+    return res.redirect('/subgrupos'); // o mostrar un mensaje de error
+  }
+
+  try {
+    await Subgrupo.deleteMany({ _id: { $in: ids } });
+    res.redirect('/subgrupos');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al eliminar subgrupos');
+  }
+});
 
 // Ruta GET para mostrar formulario de conexión
 router.get('/', (req, res) => {
